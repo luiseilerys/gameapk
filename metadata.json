@@ -1,0 +1,6 @@
+{
+  "name": "Aethelgard",
+  "description": "2D open-world SNES-style pixel art RPG with procedural world, hybrid real-time exploration and turn-based combat, crafting, and epic quests.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -63,8 +63,8 @@ class WorldManager(val generator: WorldGenerator = WorldGenerator()) {
      * Checks if a world tile is walkable (both ground tile and deco collision).
      */
     fun isWalkable(worldTileX: Float, worldTileY: Float): Boolean {
-        val tileX = worldTileX.toInt()
-        val tileY = worldTileY.toInt()
+        val tileX = kotlin.math.floor(worldTileX).toInt()
+        val tileY = kotlin.math.floor(worldTileY).toInt()
         val chunkX = Math.floorDiv(tileX, CHUNK_SIZE)
         val chunkY = Math.floorDiv(tileY, CHUNK_SIZE)
         val localX = ((tileX % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE

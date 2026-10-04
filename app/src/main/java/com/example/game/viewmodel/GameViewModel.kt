@@ -282,10 +282,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             player.walkAnimTimer = 0f
         }
 
-        // 2. Camera Lerp smoothly centered on Player
-        val lerpFactor = 0.12f
-        cameraX += (player.worldX - cameraX) * lerpFactor
-        cameraY += (player.worldY - cameraY) * lerpFactor
+        // 2. Camera rigidly locked 100% on Player (Classic Pokémon Game Boy style)
+        cameraX = player.worldX
+        cameraY = player.worldY
 
         // 3. Update dynamic loaded chunks around player
         worldManager.updatePlayerPosition(player.worldX, player.worldY)

@@ -140,23 +140,28 @@ object Strings {
     }
 
     fun getAttack(lang: GameLanguage): String = when (lang) {
-        GameLanguage.SPANISH -> "⚔ Atacar"
-        GameLanguage.ENGLISH -> "⚔ Attack"
+        GameLanguage.SPANISH -> "⚔ LUCHAR"
+        GameLanguage.ENGLISH -> "⚔ FIGHT"
     }
 
     fun getSkill(lang: GameLanguage): String = when (lang) {
-        GameLanguage.SPANISH -> "✨ Habilidad"
-        GameLanguage.ENGLISH -> "✨ Skill"
+        GameLanguage.SPANISH -> "✨ EQUIPO"
+        GameLanguage.ENGLISH -> "✨ PKMN"
     }
 
     fun getItem(lang: GameLanguage): String = when (lang) {
-        GameLanguage.SPANISH -> "🧪 Objeto"
-        GameLanguage.ENGLISH -> "🧪 Item"
+        GameLanguage.SPANISH -> "🎒 MOCHILA"
+        GameLanguage.ENGLISH -> "🎒 BAG"
     }
 
     fun getFlee(lang: GameLanguage): String = when (lang) {
-        GameLanguage.SPANISH -> "🏃 Huir"
-        GameLanguage.ENGLISH -> "🏃 Flee"
+        GameLanguage.SPANISH -> "🏃 HUIR"
+        GameLanguage.ENGLISH -> "🏃 RUN"
+    }
+
+    fun getWhatWillDo(lang: GameLanguage, name: String): String = when (lang) {
+        GameLanguage.SPANISH -> "¿Qué va a hacer $name?"
+        GameLanguage.ENGLISH -> "What will $name do?"
     }
 
     fun getSkillsSubmenu(lang: GameLanguage): String = when (lang) {

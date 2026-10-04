@@ -3,6 +3,7 @@ package com.example.game.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,9 +20,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,35 +35,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.game.graphics.PixelArtRenderer
+import com.example.game.localization.GameLanguage
+import com.example.game.localization.Strings
 import com.example.game.model.BattleActionType
 import com.example.game.model.BattleState
 import com.example.game.model.Biome
 import com.example.game.model.CombatSkill
-import com.example.game.model.Combatant
-import com.example.game.model.Direction
 import com.example.game.model.Item
 import com.example.game.model.ItemType
 import com.example.game.viewmodel.GameViewModel
 
 /**
- * Fullscreen SNES Turn-Based Battle Screen with classic RPG layout:
- * - Dynamic biome backdrop (Forest, Ruins, etc.)
- * - Enemies top, Player bottom
- * - Turn order initiative tracker
- * - Floating animated damage numbers
- * - Action command menu: Atacar, Habilidad, Objeto, Huir
- * - Victory summary popup
+ * Authentic Pokémon Game Boy / Game Boy Color Turn-Based Battle Screen:
+ * - Upper Right: Enemy Pokémon on oval battle podium with Top-Left HP Box
+ * - Lower Left: Pokémon Trainer Back-Sprite on battle podium with Bottom-Right HP Box
+ * - Bottom: Iconic double-lined Game Boy dialogue box with 2x2 Battle Commands (Luchar, Bolsa, Técnica, Huir)
+ * - Floating damage numbers, attack lunges, and victory popup
  */
 @Composable
 fun BattleScreen(
@@ -76,7 +74,8 @@ fun BattleScreen(
     val lang by viewModel.currentLanguage.collectAsState()
     var selectedSubmenu by remember { mutableStateOf<String?>(null) } // "SKILLS", "ITEMS", or null
 
-    val player = state.playerCombatant
+    val hero = viewModel.player
+    val playerCombatant = state.playerCombatant
     val primaryEnemy = state.enemyCombatants.firstOrNull { it.isAlive } ?: state.enemyCombatants.first()
 
     // Determine battle background drawable based on biome
@@ -86,7 +85,7 @@ fun BattleScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Biome Backdrop Artwork
+        // 1. Biome Backdrop Artwork
         Image(
             painter = painterResource(id = bgRes),
             contentDescription = "Fondo de batalla",
@@ -94,154 +93,174 @@ fun BattleScreen(
             contentScale = ContentScale.Crop
         )
 
-        // Dark ambient overlay for SNES contrast
+        // Dark ambient overlay for crisp Game Boy contrast
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0x990A0E17),
-                            Color(0x550A0E17),
+                            Color(0x88050811),
+                            Color(0x44050811),
                             Color(0xCC050811)
                         )
                     )
                 )
         )
 
-        // TOP SECTION: Final Boss Bar / Turn Order & Enemy Formation
+        // 2. MAIN BATTLE ARENA (Top 70% of screen)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 16.dp, start = 14.dp, end = 14.dp, bottom = 12.dp)
+                .padding(top = 16.dp, start = 12.dp, end = 12.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Boss Dedicated Health Gauge
-            if (primaryEnemy.isBoss) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xEE1E1B2E))
-                        .border(2.dp, Color(0xFFFF1744), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "★ TITÁN DEL ABISMO (JEFE FINAL) ★",
-                        color = Color(0xFFFF5252),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { (primaryEnemy.currentHp.toFloat() / primaryEnemy.maxHp).coerceIn(0f, 1f) },
+            // ==========================================
+            // TOP AREA: ENEMY HP BOX (LEFT) & ENEMY MONSTER (RIGHT)
+            // ==========================================
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Boss Banner if final boss
+                if (primaryEnemy.isBoss) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(10.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        color = Color(0xFFFF1744),
-                        trackColor = Color(0xFF4A0E17)
-                    )
+                            .padding(bottom = 6.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xEE881337))
+                            .border(1.5.dp, Color(0xFFFFD700), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "★ TITÁN DEL ABISMO (JEFE FINAL) ★",
+                            color = Color(0xFFFFCC00),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
-            }
 
-            // Top Status Bar: Turn Order Tracker
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xDD0F172A))
-                    .border(1.5.dp, Color(0xFFD97706), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = com.example.game.localization.Strings.getRound(lang, state.roundNumber),
-                    color = Color(0xFFFFD700),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // ENEMY POKÉMON HP BOX (Classic Game Boy Style on Top Left)
+                    Box(
+                        modifier = Modifier
+                            .width(170.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF8F9FA))
+                            .border(2.5.dp, Color(0xFF1E293B), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = primaryEnemy.name.uppercase(),
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Text(
+                                    text = ":L5",
+                                    color = Color(0xFF475569),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
 
-                // Turn order badges
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    state.turnOrder.forEach { combatant ->
-                        val isCurrent = (combatant.isPlayer && state.isPlayerTurn) || (!combatant.isPlayer && !state.isPlayerTurn)
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(if (isCurrent) Color(0xFFD97706) else Color(0xFF334155))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = if (combatant.isPlayer) com.example.game.localization.Strings.getHero(lang) else combatant.name.take(6),
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // HP BAR with Game Boy HP Badge
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(Color(0xFFFFCC00))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "HP",
+                                        color = Color(0xFF0F172A),
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                val hpRatio = (primaryEnemy.currentHp.toFloat() / primaryEnemy.maxHp).coerceIn(0f, 1f)
+                                val hpColor = when {
+                                    hpRatio > 0.5f -> Color(0xFF22C55E) // Green
+                                    hpRatio > 0.2f -> Color(0xFFEAB308) // Yellow
+                                    else -> Color(0xFFEF4444) // Red
+                                }
+
+                                LinearProgressIndicator(
+                                    progress = { hpRatio },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    color = hpColor,
+                                    trackColor = Color(0xFFCBD5E1)
+                                )
+                            }
+                        }
+                    }
+
+                    // ENEMY MONSTER ON OVAL PODIUM (Top Right)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.offset {
+                            if (state.isAttackAnimating && state.activeAttackerId == primaryEnemy.id) {
+                                IntOffset(-20, 20)
+                            } else IntOffset.Zero
+                        }
+                    ) {
+                        // Monster 64x64 Sprite
+                        val enemyBmp = PixelArtRenderer.getEnemyBattleBitmap(primaryEnemy.spriteKey)
+                        Image(
+                            bitmap = enemyBmp,
+                            contentDescription = primaryEnemy.name,
+                            modifier = Modifier.size(if (primaryEnemy.isBoss) 120.dp else 90.dp),
+                            filterQuality = FilterQuality.None
+                        )
+
+                        // Oval grassy battle podium
+                        Canvas(modifier = Modifier.size(width = 110.dp, height = 22.dp)) {
+                            drawOval(
+                                color = Color(0xAA2D5A27),
+                                size = size,
+                                topLeft = Offset.Zero
+                            )
+                            drawOval(
+                                color = Color(0xFF1B3D17),
+                                size = size,
+                                topLeft = Offset.Zero,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ENEMY FORMATION (Top Middle)
+            // FLOATING DAMAGE NUMBERS
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .height(60.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.offset {
-                        // Attack animation displacement towards player
-                        if (state.isAttackAnimating && state.activeAttackerId == primaryEnemy.id) {
-                            IntOffset(0, 30)
-                        } else IntOffset.Zero
-                    }
-                ) {
-                    // Enemy Health Bar & Name
-                    if (!primaryEnemy.isBoss) {
-                        Text(
-                            text = primaryEnemy.name,
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            LinearProgressIndicator(
-                                progress = { (primaryEnemy.currentHp.toFloat() / primaryEnemy.maxHp).coerceIn(0f, 1f) },
-                                modifier = Modifier
-                                    .width(110.dp)
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = Color(0xFFEF4444),
-                                trackColor = Color(0xFF450A0A)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "${primaryEnemy.currentHp}/${primaryEnemy.maxHp}",
-                                color = Color(0xFFFCA5A5),
-                                fontSize = 10.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
-
-                    // Large 64x64 Enemy Sprite
-                    val enemyBmp = PixelArtRenderer.getEnemyBattleBitmap(primaryEnemy.spriteKey)
-                    Image(
-                        bitmap = enemyBmp,
-                        contentDescription = primaryEnemy.name,
-                        modifier = Modifier.size(if (primaryEnemy.isBoss) 130.dp else 90.dp)
-                    )
-                }
-
-                // Floating Damage Numbers
                 state.floatingTexts.forEach { ft ->
                     Text(
                         text = ft.text,
@@ -255,321 +274,436 @@ fun BattleScreen(
                 }
             }
 
-            // PLAYER FORMATION (Bottom Area)
+            // ==========================================
+            // BOTTOM AREA: PLAYER TRAINER (LEFT) & PLAYER HP BOX (RIGHT)
+            // ==========================================
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(bottom = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
-                // Player Sprite
-                val playerBmp = PixelArtRenderer.getPlayerBitmap(Direction.UP, walkFrame = 0, isAttacking = state.isAttackAnimating && state.activeAttackerId == player.id)
-                Image(
-                    bitmap = playerBmp,
-                    contentDescription = player.name,
-                    modifier = Modifier
-                        .size(76.dp)
-                        .offset {
-                            if (state.isAttackAnimating && state.activeAttackerId == player.id) {
-                                IntOffset(0, -30)
-                            } else IntOffset.Zero
-                        }
-                )
-
-                // Player Stats Card
+                // PLAYER TRAINER BACK-SPRITE ON BATTLE PODIUM (Bottom Left)
                 Column(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xDD0F172A))
-                        .border(2.dp, Color(0xFFD97706), RoundedCornerShape(8.dp))
-                        .padding(10.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.offset {
+                        if (state.isAttackAnimating && state.activeAttackerId == playerCombatant.id) {
+                            IntOffset(20, -20)
+                        } else IntOffset.Zero
+                    }
                 ) {
+                    val isAttacking = state.isAttackAnimating && state.activeAttackerId == playerCombatant.id
+                    val trainerBackBmp = PixelArtRenderer.getTrainerBackSprite(isThrowing = isAttacking)
+
+                    Image(
+                        bitmap = trainerBackBmp,
+                        contentDescription = "Entrenador Red",
+                        modifier = Modifier.size(100.dp),
+                        filterQuality = FilterQuality.None
+                    )
+
+                    // Oval Player Battle Podium
+                    Canvas(modifier = Modifier.size(width = 110.dp, height = 22.dp)) {
+                        drawOval(
+                            color = Color(0xAA475569),
+                            size = size,
+                            topLeft = Offset.Zero
+                        )
+                        drawOval(
+                            color = Color(0xFF1E293B),
+                            size = size,
+                            topLeft = Offset.Zero,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                        )
+                    }
+                }
+
+                // PLAYER HP & STATUS BOX (Bottom Right)
+                Box(
+                    modifier = Modifier
+                        .width(180.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFF8F9FA))
+                        .border(2.5.dp, Color(0xFF1E293B), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "RED",
+                                color = Color(0xFF0F172A),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = ":L" + hero.level,
+                                color = Color(0xFF475569),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // HP BAR
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(Color(0xFFFFCC00))
+                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = "HP",
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            val playerHpRatio = (playerCombatant.currentHp.toFloat() / playerCombatant.maxHp).coerceIn(0f, 1f)
+                            val playerHpColor = when {
+                                playerHpRatio > 0.5f -> Color(0xFF22C55E)
+                                playerHpRatio > 0.2f -> Color(0xFFEAB308)
+                                else -> Color(0xFFEF4444)
+                            }
+
+                            LinearProgressIndicator(
+                                progress = { playerHpRatio },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = playerHpColor,
+                                trackColor = Color(0xFFCBD5E1)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        // HP Text numbers
+                        Text(
+                            text = "${playerCombatant.currentHp}/ ${playerCombatant.maxHp}",
+                            color = Color(0xFF1E293B),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.align(Alignment.End)
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        // EXP Bar
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "EXP",
+                                color = Color(0xFF2563EB),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            LinearProgressIndicator(
+                                progress = { (hero.xp.toFloat() / hero.xpToNextLevel).coerceIn(0f, 1f) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp)),
+                                color = Color(0xFF2563EB),
+                                trackColor = Color(0xFFE2E8F0)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // CLASSIC GAME BOY BATTLE COMMAND DIALOGUE BOX (BOTTOM)
+            // ==========================================
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF8F9FA))
+                    .border(3.dp, Color(0xFF0F172A), RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                if (selectedSubmenu == null) {
+                    // MAIN COMMANDS: Left message & Right 2x2 action buttons
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left: Prompt Question
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = if (lang == GameLanguage.SPANISH) "¿Qué hará RED?" else "What will RED do?",
+                                color = Color(0xFF0F172A),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.Monospace,
+                                lineHeight = 20.sp
+                            )
+                        }
+
+                        // Right: 2x2 Action Buttons
+                        Column(
+                            modifier = Modifier
+                                .width(180.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFE2E8F0))
+                                .border(1.5.dp, Color(0xFF64748B), RoundedCornerShape(6.dp))
+                                .padding(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Button(
+                                    onClick = { viewModel.executePlayerAction(BattleActionType.ATTACK) },
+                                    enabled = state.isPlayerTurn && !state.isAttackAnimating,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier.weight(1f).height(38.dp)
+                                ) {
+                                    Text(
+                                        text = if (lang == GameLanguage.SPANISH) "LUCHAR" else "FIGHT",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { selectedSubmenu = "ITEMS" },
+                                    enabled = state.isPlayerTurn && !state.isAttackAnimating,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier.weight(1f).height(38.dp)
+                                ) {
+                                    Text(
+                                        text = if (lang == GameLanguage.SPANISH) "BOLSA" else "BAG",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Button(
+                                    onClick = { selectedSubmenu = "SKILLS" },
+                                    enabled = state.isPlayerTurn && !state.isAttackAnimating,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier.weight(1f).height(38.dp)
+                                ) {
+                                    Text(
+                                        text = if (lang == GameLanguage.SPANISH) "POKÉ" else "PKMN",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { viewModel.executePlayerAction(BattleActionType.FLEE) },
+                                    enabled = state.isPlayerTurn && !state.isAttackAnimating,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF475569)),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier.weight(1f).height(38.dp)
+                                ) {
+                                    Text(
+                                        text = if (lang == GameLanguage.SPANISH) "HUIR" else "RUN",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else if (selectedSubmenu == "SKILLS") {
+                    // SKILLS / TECHNIQUES SUBMENU
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (lang == GameLanguage.SPANISH) "MOVIMIENTOS POKÉMON" else "POKÉMON MOVES",
+                                color = Color(0xFF0F172A),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                text = "◀ " + Strings.getBack(lang),
+                                color = Color(0xFFDC2626),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { selectedSubmenu = null }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            playerCombatant.skills.take(2).forEach { skill ->
+                                val canAfford = playerCombatant.currentMp >= skill.mpCost
+                                Button(
+                                    onClick = {
+                                        selectedSubmenu = null
+                                        viewModel.executePlayerAction(BattleActionType.SKILL, skill = skill)
+                                    },
+                                    enabled = canAfford && state.isPlayerTurn,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2563EB),
+                                        disabledContainerColor = Color(0xFF94A3B8)
+                                    ),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier.weight(1f).height(44.dp)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(skill.name, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("PP: ${skill.mpCost}", color = Color(0xFFFFD700), fontSize = 9.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (selectedSubmenu == "ITEMS") {
+                    // ITEMS / BAG SUBMENU
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (lang == GameLanguage.SPANISH) "BOLSA DE OBJETOS" else "BAG ITEMS",
+                                color = Color(0xFF0F172A),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                text = "◀ " + Strings.getBack(lang),
+                                color = Color(0xFFDC2626),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { selectedSubmenu = null }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        val consumables = hero.inventory.filter { it.type == ItemType.CONSUMABLE && it.stackCount > 0 }
+                        if (consumables.isEmpty()) {
+                            Text(
+                                text = if (lang == GameLanguage.SPANISH) "La bolsa está vacía." else "Bag is empty.",
+                                color = Color(0xFF64748B),
+                                fontSize = 12.sp
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                consumables.take(2).forEach { item ->
+                                    Button(
+                                        onClick = {
+                                            selectedSubmenu = null
+                                            viewModel.executePlayerAction(BattleActionType.ITEM, item = item)
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier.weight(1f).height(44.dp)
+                                    ) {
+                                        Text("${item.name} x${item.stackCount}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // VICTORY POPUP OVERLAY
+        AnimatedVisibility(
+            visible = state.isVictory,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF8F9FA))
+                    .border(3.dp, Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = player.name,
-                        color = Color(0xFFFFD700),
+                        text = if (lang == GameLanguage.SPANISH) "¡VICTORIA!" else "VICTORY!",
+                        color = Color(0xFF16A34A),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "EXP: +${state.xpEarned} XP",
+                        color = Color(0xFF1E293B),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("HP: ", color = Color(0xFFEF4444), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        LinearProgressIndicator(
-                            progress = { (player.currentHp.toFloat() / player.maxHp).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .width(90.dp)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = Color(0xFFEF4444),
-                            trackColor = Color(0xFF450A0A)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("${player.currentHp}/${player.maxHp}", color = Color.White, fontSize = 10.sp)
-                    }
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("MP: ", color = Color(0xFF3B82F6), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        LinearProgressIndicator(
-                            progress = { (player.currentMp.toFloat() / player.maxMp).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .width(90.dp)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = Color(0xFF3B82F6),
-                            trackColor = Color(0xFF1E293B)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("${player.currentMp}/${player.maxMp}", color = Color.White, fontSize = 10.sp)
-                    }
-                }
-            }
-
-            // COMBAT LOG BANNER
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xE60A0E17))
-                    .border(1.5.dp, Color(0xFF475569), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = state.battleLog.lastOrNull() ?: "Tu turno para actuar.",
-                    color = Color(0xFFA7F3D0),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // ACTION CONTROLS / SUBMENUS
-            if (selectedSubmenu == "SKILLS") {
-                // Skills Submenu
-                SkillsSubmenu(
-                    skills = player.skills,
-                    currentMp = player.currentMp,
-                    onSelectSkill = { skill ->
-                        selectedSubmenu = null
-                        viewModel.executePlayerAction(BattleActionType.SKILL, skill = skill)
-                    },
-                    onBack = { selectedSubmenu = null }
-                )
-            } else if (selectedSubmenu == "ITEMS") {
-                // Items Submenu
-                ItemsSubmenu(
-                    items = viewModel.player.inventory.filter { it.type == ItemType.CONSUMABLE },
-                    onSelectItem = { item ->
-                        selectedSubmenu = null
-                        viewModel.executePlayerAction(BattleActionType.ITEM, item = item)
-                    },
-                    onBack = { selectedSubmenu = null }
-                )
-            } else {
-                // Primary Action Command Buttons (SNES RPG Bar)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    BattleActionButton(
-                        label = com.example.game.localization.Strings.getAttack(lang),
-                        color = Color(0xFFDC2626),
-                        enabled = state.isPlayerTurn && !state.isAttackAnimating,
-                        onClick = { viewModel.executePlayerAction(BattleActionType.ATTACK) },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BattleActionButton(
-                        label = com.example.game.localization.Strings.getSkill(lang),
-                        color = Color(0xFF2563EB),
-                        enabled = state.isPlayerTurn && !state.isAttackAnimating,
-                        onClick = { selectedSubmenu = "SKILLS" },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BattleActionButton(
-                        label = com.example.game.localization.Strings.getItem(lang),
-                        color = Color(0xFF059669),
-                        enabled = state.isPlayerTurn && !state.isAttackAnimating,
-                        onClick = { selectedSubmenu = "ITEMS" },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    BattleActionButton(
-                        label = com.example.game.localization.Strings.getFlee(lang),
-                        color = Color(0xFFD97706),
-                        enabled = state.isPlayerTurn && !state.isAttackAnimating && !primaryEnemy.isBoss,
-                        onClick = { viewModel.executePlayerAction(BattleActionType.FLEE) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        // VICTORY SUMMARY MODAL
-        if (state.isVictory && !primaryEnemy.isBoss) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xCC000000))
-                    .clickable {},
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0F172A))
-                        .border(3.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp))
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
                     Text(
-                        text = com.example.game.localization.Strings.getVictory(lang),
-                        color = Color(0xFFFFD700),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black
+                        text = "¥: +${state.goldEarned} ¥",
+                        color = Color(0xFFD97706),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
                     )
+
                     Spacer(modifier = Modifier.height(14.dp))
-                    Text(com.example.game.localization.Strings.getRewards(lang), color = Color.White, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("• +${state.xpEarned} EXP", color = Color(0xFF10B981), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text("• +${state.goldEarned} Gold", color = Color(0xFFFFD700), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(20.dp))
+
                     Button(
                         onClick = { viewModel.closeVictoryScreen() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
-                        shape = RoundedCornerShape(8.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                        shape = RoundedCornerShape(6.dp)
                     ) {
-                        Text(com.example.game.localization.Strings.getContinueAdventure(lang), color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = Strings.getContinue(lang),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BattleActionButton(
-    label: String,
-    color: Color,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (enabled) color else Color(0xFF334155))
-            .border(2.dp, if (enabled) Color.White.copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(8.dp))
-            .clickable(enabled = enabled) { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = if (enabled) Color.White else Color(0xFF94A3B8),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun SkillsSubmenu(
-    skills: List<CombatSkill>,
-    currentMp: Int,
-    onSelectSkill: (CombatSkill) -> Unit,
-    onBack: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xF00F172A))
-            .border(2.dp, Color(0xFF2563EB), RoundedCornerShape(8.dp))
-            .padding(10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Habilidades Especiales", color = Color(0xFF60A5FA), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Text("Volver ✕", color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onBack() })
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        skills.forEach { skill ->
-            val canAfford = currentMp >= skill.mpCost
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 3.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(if (canAfford) Color(0xFF1E293B) else Color(0xFF0F172A))
-                    .clickable(enabled = canAfford) { onSelectSkill(skill) }
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(skill.name, color = if (canAfford) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text(skill.description, color = Color(0xFF94A3B8), fontSize = 10.sp)
-                }
-                Text("${skill.mpCost} MP", color = if (canAfford) Color(0xFF38BDF8) else Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ItemsSubmenu(
-    items: List<Item>,
-    onSelectItem: (Item) -> Unit,
-    onBack: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xF00F172A))
-            .border(2.dp, Color(0xFF059669), RoundedCornerShape(8.dp))
-            .padding(10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Objetos Consumibles", color = Color(0xFF34D399), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Text("Volver ✕", color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onBack() })
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        if (items.isEmpty()) {
-            Text("No tienes consumibles en tu mochila.", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(8.dp))
-        } else {
-            items.forEach { item ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF1E293B))
-                        .clickable { onSelectItem(item) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(item.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(item.description, color = Color(0xFF94A3B8), fontSize = 10.sp)
-                    }
-                    Text("x${item.stackCount}", color = Color(0xFFFFD700), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

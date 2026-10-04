@@ -12,27 +12,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import com.example.game.graphics.PixelArtRenderer
 import com.example.game.model.DecoType
-import com.example.game.model.Direction
 import com.example.game.viewmodel.GameViewModel
 import com.example.game.world.CHUNK_SIZE
 import kotlinx.coroutines.isActive
 
 /**
- * 60 FPS Compose Canvas rendering the 2D procedural open world with SNES pixel art aesthetic.
+ * 60 FPS Compose Canvas rendering the 2D procedural Pokémon Game Boy world.
+ * The camera is strictly and perpetually centered on the Pokémon Trainer character whenever they move.
  */
 @Composable
 fun OverworldCanvas(
     viewModel: GameViewModel,
     modifier: Modifier = Modifier
 ) {
-    // Re-draw heartbeat driven by frame ticker
+    // Re-draw heartbeat driven by high-precision frame ticker
     var frameTick by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -40,28 +40,33 @@ fun OverworldCanvas(
         }
     }
 
-    val player = viewModel.player
-    val cameraX = viewModel.cameraX
-    val cameraY = viewModel.cameraY
-    val activeChunks = viewModel.worldManager.getActiveChunks()
-
-    // Base tile display size on screen (e.g. 64px for chunky 2x pixel art feel on modern phones)
+    // Base tile display size on screen (72px chunky retro pixel grid)
     val displayTileSize = 72f
 
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A))
+            .background(Color(0xFF0C101A))
     ) {
-        // Read frameTick to trigger recomposition every frame
+        // Read frameTick to trigger 60 FPS continuous redraw
         val _tick = frameTick
 
+        // Read player coordinates on every frame
+        val player = viewModel.player
+        val currentX = player.worldX
+        val currentY = player.worldY
+
+        // Always query the dynamically active loaded chunks on each frame
+        val activeChunks = viewModel.worldManager.getActiveChunks()
+
+        // Center calculation: Centers the character directly in the visible play area (above bottom controls)
         val screenCenterX = size.width / 2f
-        val screenCenterY = size.height / 2f
+        val screenCenterY = (size.height - 100.dp.toPx()) / 2f
 
         // Helper to convert world coordinates to screen pixel coordinates
-        fun toScreenX(worldX: Float): Float = screenCenterX + (worldX - cameraX) * displayTileSize
-        fun toScreenY(worldY: Float): Float = screenCenterY + (worldY - cameraY) * displayTileSize
+        // The character at (currentX, currentY) is locked strictly dead-center on the screen
+        fun toScreenX(worldX: Float): Float = screenCenterX - (displayTileSize / 2f) + (worldX - currentX) * displayTileSize
+        fun toScreenY(worldY: Float): Float = screenCenterY - (displayTileSize / 2f) + (worldY - currentY) * displayTileSize
 
         // 1. RENDER CHUNKS (Terrain Tiles)
         for (chunk in activeChunks) {
@@ -72,7 +77,7 @@ fun OverworldCanvas(
                 val worldX = (chunkBaseX + x).toFloat()
                 val screenX = toScreenX(worldX)
 
-                // Culling: check if column is on screen
+                // Culling: check if column is visible on screen
                 if (screenX < -displayTileSize || screenX > size.width) continue
 
                 for (y in 0 until CHUNK_SIZE) {
@@ -94,7 +99,7 @@ fun OverworldCanvas(
             }
         }
 
-        // 2. RENDER DECORATIONS (Trees, Rocks, Pillars, Altar)
+        // 2. RENDER DECORATIONS (Trees, Flowers, Boulders, Altars)
         for (chunk in activeChunks) {
             val chunkBaseX = chunk.chunkX * CHUNK_SIZE
             val chunkBaseY = chunk.chunkY * CHUNK_SIZE
@@ -125,7 +130,7 @@ fun OverworldCanvas(
             }
         }
 
-        // 3. RENDER CHESTS
+        // 3. RENDER POKÉBALL ITEMS / CHESTS
         for (chunk in activeChunks) {
             for (chest in chunk.chests) {
                 val screenX = toScreenX(chest.worldX)
@@ -142,7 +147,7 @@ fun OverworldCanvas(
             }
         }
 
-        // 4. RENDER PASSIVE ANIMALS
+        // 4. RENDER PASSIVE POKÉMON / ANIMALS
         for (chunk in activeChunks) {
             for (animal in chunk.animals) {
                 if (!animal.isAlive) continue
@@ -160,7 +165,7 @@ fun OverworldCanvas(
             }
         }
 
-        // 5. RENDER NPCS
+        // 5. RENDER NPCS (Pokémon Professors / Gym Leaders)
         for (chunk in activeChunks) {
             for (npc in chunk.npcs) {
                 val screenX = toScreenX(npc.worldX)
@@ -173,7 +178,7 @@ fun OverworldCanvas(
                         dstSize = IntSize(displayTileSize.toInt(), displayTileSize.toInt()),
                         filterQuality = FilterQuality.None
                     )
-                    // Quest marker bubble above NPC
+                    // Quest indicator exclamation mark above NPC head
                     drawCircle(
                         color = Color(0xFFFFD700),
                         radius = 8f,
@@ -183,7 +188,7 @@ fun OverworldCanvas(
             }
         }
 
-        // 6. RENDER ENEMIES
+        // 6. RENDER WILD POKÉMON / OVERWORLD MONSTERS
         for (chunk in activeChunks) {
             for (enemy in chunk.enemies) {
                 if (!enemy.isAlive) continue
@@ -197,7 +202,7 @@ fun OverworldCanvas(
                         dstSize = IntSize(displayTileSize.toInt(), displayTileSize.toInt()),
                         filterQuality = FilterQuality.None
                     )
-                    // Aggro indicator
+                    // Aggro indicator (! above head like wild Pokémon encounter)
                     if (enemy.isAggroed) {
                         drawCircle(
                             color = Color(0xFFFF1744),
@@ -209,9 +214,9 @@ fun OverworldCanvas(
             }
         }
 
-        // 7. RENDER PLAYER (HERO)
-        val playerScreenX = toScreenX(player.worldX)
-        val playerScreenY = toScreenY(player.worldY)
+        // 7. RENDER PLAYER (POKÉMON TRAINER) - 100% LOCKED IN CENTER OF SCREEN
+        val playerScreenX = screenCenterX - (displayTileSize / 2f)
+        val playerScreenY = screenCenterY - (displayTileSize / 2f)
 
         // Invulnerability flicker
         val shouldDrawPlayer = player.invulnerableTimer <= 0f || ((player.invulnerableTimer * 10).toInt() % 2 == 0)

@@ -14,12 +14,12 @@ enum class Direction {
  * Player state in overworld.
  */
 data class Player(
-    var worldX: Float = 0f,
-    var worldY: Float = 0f,
-    var direction: Direction = Direction.DOWN,
-    var isMoving: Boolean = false,
-    var isAttacking: Boolean = false,
-    var walkAnimTimer: Float = 0f,
+    @Volatile var worldX: Float = 0f,
+    @Volatile var worldY: Float = 0f,
+    @Volatile var direction: Direction = Direction.DOWN,
+    @Volatile var isMoving: Boolean = false,
+    @Volatile var isAttacking: Boolean = false,
+    @Volatile var walkAnimTimer: Float = 0f,
     var level: Int = 1,
     var xp: Int = 0,
     var xpToNextLevel: Int = 100,

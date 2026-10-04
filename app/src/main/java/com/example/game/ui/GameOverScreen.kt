@@ -15,6 +15,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +36,9 @@ fun GameOverScreen(
     viewModel: GameViewModel,
     modifier: Modifier = Modifier
 ) {
+    val lang by viewModel.currentLanguage.collectAsState()
+    val hasSave = viewModel.saveManager.hasSavedGame()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -60,7 +65,7 @@ fun GameOverScreen(
                 .padding(24.dp)
         ) {
             Text(
-                text = "FIN DE LA PARTIDA",
+                text = com.example.game.localization.Strings.getGameOverTitle(lang),
                 color = Color(0xFFEF4444),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
@@ -68,7 +73,7 @@ fun GameOverScreen(
             )
 
             Text(
-                text = "Tu fuerza ha menguado ante los peligros de Aethelgard. La leyenda del héroe aguarda otra oportunidad.",
+                text = com.example.game.localization.Strings.getGameOverDesc(lang),
                 color = Color(0xFFFCA5A5),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -77,10 +82,10 @@ fun GameOverScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Reintentar (load last save if available, otherwise new game)
+            // Reintentar
             Button(
                 onClick = {
-                    if (viewModel.saveManager.hasSavedGame()) {
+                    if (hasSave) {
                         viewModel.continueGame()
                     } else {
                         viewModel.startNewGame()
@@ -93,7 +98,7 @@ fun GameOverScreen(
                     .height(48.dp)
             ) {
                 Text(
-                    text = if (viewModel.saveManager.hasSavedGame()) "Cargar Último Guardado" else "Reintentar Aventura",
+                    text = com.example.game.localization.Strings.getRetry(lang, hasSave),
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
@@ -108,7 +113,7 @@ fun GameOverScreen(
                     .fillMaxWidth()
                     .height(46.dp)
             ) {
-                Text("Salir al Menú Principal", color = Color.White)
+                Text(com.example.game.localization.Strings.getExitToMenu(lang), color = Color.White)
             }
         }
     }

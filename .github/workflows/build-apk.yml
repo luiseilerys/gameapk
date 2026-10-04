@@ -1,0 +1,82 @@
+name: Build Android 5.0+ APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Tipo de compilación (Debug recomendado para instalación inmediata)'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-apk:
+    name: Compilar APK (Android 5.0+ / API 21+)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código fuente (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Preparar entorno y archivos de configuración
+        run: |
+          # Crear .env necesario para el plugin de secretos
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            touch .env
+          fi
+          
+          # Generar debug.keystore si no existe
+          if [ ! -f debug.keystore ]; then
+            keytool -genkey -v -keystore debug.keystore \
+              -storepass android -alias androiddebugkey \
+              -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Aethelgard,C=US"
+          fi
+          
+          # Dar permisos de ejecución a gradlew
+          chmod +x gradlew
+
+      - name: Compilar APK con Gradle
+        run: |
+          if [ "${{ github.event.inputs.build_type }}" = "release" ]; then
+            ./gradlew assembleRelease --stacktrace
+          else
+            ./gradlew assembleDebug --stacktrace
+          fi
+
+      - name: Localizar archivo APK generado
+        id: find-apk
+        run: |
+          APK_PATH=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          echo "APK encontrado en: $APK_PATH"
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+
+      - name: Subir APK como artefacto de GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aethelgard-Android-5.0-APK
+          path: ${{ steps.find-apk.outputs.apk_path }}
+          retention-days: 30
+
+      - name: Resumen de compilación
+        run: |
+          echo "### 🎮 Compilación de Aethelgard Exitosa" >> $GITHUB_STEP_SUMMARY
+          echo "El archivo APK compatible con Android 5.0 (Lollipop - API 21) hasta Android 14+ está listo para descargar." >> $GITHUB_STEP_SUMMARY
+          echo "- **Ubicación:** Artefactos de la pestaña Actions" >> $GITHUB_STEP_SUMMARY
+          echo "- **Compatibilidad:** minSdkVersion 21 (Android 5.0)" >> $GITHUB_STEP_SUMMARY

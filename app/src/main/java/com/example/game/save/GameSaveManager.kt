@@ -18,6 +18,15 @@ class GameSaveManager(context: Context) {
         return prefs.getBoolean("has_saved_game", false)
     }
 
+    fun getSavedLanguage(): com.example.game.localization.GameLanguage {
+        val code = prefs.getString("game_language", "es") ?: "es"
+        return if (code == "en") com.example.game.localization.GameLanguage.ENGLISH else com.example.game.localization.GameLanguage.SPANISH
+    }
+
+    fun saveLanguage(lang: com.example.game.localization.GameLanguage) {
+        prefs.edit().putString("game_language", lang.code).apply()
+    }
+
     fun saveGame(
         player: Player,
         exploredChunksCount: Int,

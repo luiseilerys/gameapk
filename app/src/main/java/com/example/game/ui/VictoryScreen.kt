@@ -16,6 +16,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +37,7 @@ fun VictoryScreen(
     viewModel: GameViewModel,
     modifier: Modifier = Modifier
 ) {
+    val lang by viewModel.currentLanguage.collectAsState()
     val durationSeconds = ((System.currentTimeMillis() - viewModel.gameStartTime) / 1000).toInt()
     val minutes = durationSeconds / 60
     val seconds = durationSeconds % 60
@@ -66,7 +69,7 @@ fun VictoryScreen(
                 .padding(24.dp)
         ) {
             Text(
-                text = "★ ¡VICTORIA SUPREMA! ★",
+                text = com.example.game.localization.Strings.getSupremeVictoryTitle(lang),
                 color = Color(0xFFFFD700),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black,
@@ -74,7 +77,7 @@ fun VictoryScreen(
             )
 
             Text(
-                text = "Has derrotado al temible Titán del Abismo y sellado el Orbe del Sol Ancestral. La paz retorna al reino de Aethelgard.",
+                text = com.example.game.localization.Strings.getSupremeVictoryDesc(lang),
                 color = Color(0xFFE2E8F0),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
@@ -92,12 +95,12 @@ fun VictoryScreen(
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StatRow("Tiempo de Partida:", timeFormatted, Color(0xFF67E8F9))
-                StatRow("Nivel Alcanzado:", "Nivel ${viewModel.player.level}", Color(0xFFFDE047))
-                StatRow("Enemigos Vencidos:", "${viewModel.enemiesDefeatedCount}", Color(0xFFF87171))
-                StatRow("Cofres Abiertos:", "${viewModel.chestsOpenedCount}", Color(0xFFFBBF24))
-                StatRow("Sectores Explorados:", "${viewModel.worldManager.getExploredChunksCount()} chunks", Color(0xFF4ADE80))
-                StatRow("Oro Acumulado:", "${viewModel.player.gold} G", Color(0xFFFFD700))
+                StatRow(com.example.game.localization.Strings.getPlayTime(lang), timeFormatted, Color(0xFF67E8F9))
+                StatRow(com.example.game.localization.Strings.getLevelReached(lang), "${com.example.game.localization.Strings.getLevelShort(lang)} ${viewModel.player.level}", Color(0xFFFDE047))
+                StatRow(com.example.game.localization.Strings.getEnemiesDefeated(lang), "${viewModel.enemiesDefeatedCount}", Color(0xFFF87171))
+                StatRow(com.example.game.localization.Strings.getChestsOpened(lang), "${viewModel.chestsOpenedCount}", Color(0xFFFBBF24))
+                StatRow(com.example.game.localization.Strings.getSectorsExplored(lang), "${viewModel.worldManager.getExploredChunksCount()} chunks", Color(0xFF4ADE80))
+                StatRow("${com.example.game.localization.Strings.getGold(lang)}:", "${viewModel.player.gold} G", Color(0xFFFFD700))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -110,7 +113,7 @@ fun VictoryScreen(
                     .fillMaxWidth()
                     .height(48.dp)
             ) {
-                Text("Regresar al Menú Principal", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(com.example.game.localization.Strings.getExitToMenu(lang), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }

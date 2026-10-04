@@ -28,6 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,7 @@ fun BattleScreen(
     viewModel: GameViewModel,
     modifier: Modifier = Modifier
 ) {
+    val lang by viewModel.currentLanguage.collectAsState()
     var selectedSubmenu by remember { mutableStateOf<String?>(null) } // "SKILLS", "ITEMS", or null
 
     val player = state.playerCombatant
@@ -156,7 +158,7 @@ fun BattleScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Ronda ${state.roundNumber}",
+                    text = com.example.game.localization.Strings.getRound(lang, state.roundNumber),
                     color = Color(0xFFFFD700),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
@@ -173,7 +175,7 @@ fun BattleScreen(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = if (combatant.isPlayer) "Héroe" else combatant.name.take(6),
+                                text = if (combatant.isPlayer) com.example.game.localization.Strings.getHero(lang) else combatant.name.take(6),
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
@@ -370,7 +372,7 @@ fun BattleScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     BattleActionButton(
-                        label = "⚔ Atacar",
+                        label = com.example.game.localization.Strings.getAttack(lang),
                         color = Color(0xFFDC2626),
                         enabled = state.isPlayerTurn && !state.isAttackAnimating,
                         onClick = { viewModel.executePlayerAction(BattleActionType.ATTACK) },
@@ -378,7 +380,7 @@ fun BattleScreen(
                     )
 
                     BattleActionButton(
-                        label = "✨ Habilidad",
+                        label = com.example.game.localization.Strings.getSkill(lang),
                         color = Color(0xFF2563EB),
                         enabled = state.isPlayerTurn && !state.isAttackAnimating,
                         onClick = { selectedSubmenu = "SKILLS" },
@@ -386,7 +388,7 @@ fun BattleScreen(
                     )
 
                     BattleActionButton(
-                        label = "🧪 Objeto",
+                        label = com.example.game.localization.Strings.getItem(lang),
                         color = Color(0xFF059669),
                         enabled = state.isPlayerTurn && !state.isAttackAnimating,
                         onClick = { selectedSubmenu = "ITEMS" },
@@ -394,7 +396,7 @@ fun BattleScreen(
                     )
 
                     BattleActionButton(
-                        label = "🏃 Huir",
+                        label = com.example.game.localization.Strings.getFlee(lang),
                         color = Color(0xFFD97706),
                         enabled = state.isPlayerTurn && !state.isAttackAnimating && !primaryEnemy.isBoss,
                         onClick = { viewModel.executePlayerAction(BattleActionType.FLEE) },
@@ -423,23 +425,23 @@ fun BattleScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "¡VICTORIA!",
+                        text = com.example.game.localization.Strings.getVictory(lang),
                         color = Color(0xFFFFD700),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black
                     )
                     Spacer(modifier = Modifier.height(14.dp))
-                    Text("Recompensas obtenidas:", color = Color.White, fontSize = 14.sp)
+                    Text(com.example.game.localization.Strings.getRewards(lang), color = Color.White, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("• +${state.xpEarned} Puntos de EXP", color = Color(0xFF10B981), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text("• +${state.goldEarned} Monedas de Oro", color = Color(0xFFFFD700), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("• +${state.xpEarned} EXP", color = Color(0xFF10B981), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("• +${state.goldEarned} Gold", color = Color(0xFFFFD700), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = { viewModel.closeVictoryScreen() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Continuar Aventura ▶", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(com.example.game.localization.Strings.getContinueAdventure(lang), color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }

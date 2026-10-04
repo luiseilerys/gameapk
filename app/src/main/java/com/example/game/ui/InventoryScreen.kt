@@ -26,6 +26,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +55,7 @@ fun InventoryScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val lang by viewModel.currentLanguage.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Mochila, 1: Alquimia y Forja, 2: Atributos
     var selectedItem by remember { mutableStateOf<Item?>(viewModel.player.inventory.firstOrNull()) }
 
@@ -71,7 +73,7 @@ fun InventoryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "MENU DE PERSONAJE",
+                    text = com.example.game.localization.Strings.getCharacterMenuTitle(lang),
                     color = Color(0xFFFFD700),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black
@@ -82,7 +84,7 @@ fun InventoryScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
                     shape = RoundedCornerShape(6.dp)
                 ) {
-                    Text("Cerrar ✕", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(com.example.game.localization.Strings.getClose(lang), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -97,17 +99,17 @@ fun InventoryScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("Mochila (4x5)", fontWeight = FontWeight.Bold) }
+                    text = { Text(com.example.game.localization.Strings.getTabBackpack(lang), fontWeight = FontWeight.Bold) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("Forja & Alquimia", fontWeight = FontWeight.Bold) }
+                    text = { Text(com.example.game.localization.Strings.getTabCrafting(lang), fontWeight = FontWeight.Bold) }
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text("Estadísticas", fontWeight = FontWeight.Bold) }
+                    text = { Text(com.example.game.localization.Strings.getTabStats(lang), fontWeight = FontWeight.Bold) }
                 )
             }
 
@@ -118,9 +120,10 @@ fun InventoryScreen(
                 0 -> InventoryGridTab(
                     viewModel = viewModel,
                     selectedItem = selectedItem,
-                    onSelectItem = { selectedItem = it }
+                    onSelectItem = { selectedItem = it },
+                    lang = lang
                 )
-                1 -> CraftingTab(viewModel = viewModel)
+                1 -> CraftingTab(viewModel = viewModel, lang = lang)
                 2 -> CharacterStatsTab(viewModel = viewModel)
             }
         }
@@ -131,7 +134,8 @@ fun InventoryScreen(
 private fun InventoryGridTab(
     viewModel: GameViewModel,
     selectedItem: Item?,
-    onSelectItem: (Item) -> Unit
+    onSelectItem: (Item) -> Unit,
+    lang: com.example.game.localization.GameLanguage
 ) {
     val player = viewModel.player
     val inventory = player.inventory
@@ -148,24 +152,24 @@ private fun InventoryGridTab(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Arma Equipada", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                Text(com.example.game.localization.Strings.getEquippedWeapon(lang), color = Color(0xFF94A3B8), fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(player.equippedWeapon.name, color = Color(0xFF60A5FA), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text("+${player.equippedWeapon.attackBonus} Ataque", color = Color(0xFF10B981), fontSize = 10.sp)
+                Text("+${player.equippedWeapon.attackBonus} Atk", color = Color(0xFF10B981), fontSize = 10.sp)
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Armadura Equipada", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                Text(com.example.game.localization.Strings.getEquippedArmor(lang), color = Color(0xFF94A3B8), fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(player.equippedArmor.name, color = Color(0xFFF472B6), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text("+${player.equippedArmor.defenseBonus} Defensa", color = Color(0xFF10B981), fontSize = 10.sp)
+                Text("+${player.equippedArmor.defenseBonus} Def", color = Color(0xFF10B981), fontSize = 10.sp)
             }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
         // 4x5 Grid (20 Slots)
-        Text("Objetos en Mochila (${inventory.size}/20):", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(com.example.game.localization.Strings.getBackpackItemsCount(lang, inventory.size), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(6.dp))
 
         LazyVerticalGrid(
@@ -255,7 +259,7 @@ private fun InventoryGridTab(
                             shape = RoundedCornerShape(6.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Usar", fontWeight = FontWeight.Bold)
+                            Text(com.example.game.localization.Strings.getUse(lang), fontWeight = FontWeight.Bold)
                         }
                     } else if (item.type == ItemType.WEAPON || item.type == ItemType.ARMOR) {
                         Button(
@@ -264,7 +268,7 @@ private fun InventoryGridTab(
                             shape = RoundedCornerShape(6.dp),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Equipar", fontWeight = FontWeight.Bold)
+                            Text(com.example.game.localization.Strings.getEquip(lang), fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -274,7 +278,7 @@ private fun InventoryGridTab(
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Descartar", fontWeight = FontWeight.Bold)
+                        Text(com.example.game.localization.Strings.getDiscard(lang), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -283,7 +287,7 @@ private fun InventoryGridTab(
 }
 
 @Composable
-private fun CraftingTab(viewModel: GameViewModel) {
+private fun CraftingTab(viewModel: GameViewModel, lang: com.example.game.localization.GameLanguage) {
     val recipes = ItemCatalog.RECIPES
 
     LazyColumn(
@@ -291,13 +295,17 @@ private fun CraftingTab(viewModel: GameViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(recipes) { recipe ->
-            CraftingRecipeCard(recipe = recipe, viewModel = viewModel)
+            CraftingRecipeCard(recipe = recipe, viewModel = viewModel, lang = lang)
         }
     }
 }
 
 @Composable
-private fun CraftingRecipeCard(recipe: CraftingRecipe, viewModel: GameViewModel) {
+private fun CraftingRecipeCard(
+    recipe: CraftingRecipe,
+    viewModel: GameViewModel,
+    lang: com.example.game.localization.GameLanguage
+) {
     val player = viewModel.player
 
     // Check if player has all required ingredients
@@ -335,7 +343,7 @@ private fun CraftingRecipeCard(recipe: CraftingRecipe, viewModel: GameViewModel)
                 ),
                 shape = RoundedCornerShape(6.dp)
             ) {
-                Text("Fabricar", fontWeight = FontWeight.Bold)
+                Text(com.example.game.localization.Strings.getCraft(lang), fontWeight = FontWeight.Bold)
             }
         }
 
@@ -345,7 +353,7 @@ private fun CraftingRecipeCard(recipe: CraftingRecipe, viewModel: GameViewModel)
         Spacer(modifier = Modifier.height(8.dp))
 
         // Ingredients required
-        Text("Materiales requeridos:", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Text(com.example.game.localization.Strings.getRequiredMaterials(lang), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             recipe.ingredients.forEach { ing ->
                 val inInv = player.inventory.find { it.id == ing.itemId }?.stackCount ?: 0

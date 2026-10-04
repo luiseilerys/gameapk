@@ -97,5 +97,18 @@ class ExampleUnitTest {
     assertTrue(player.totalDefense > player.baseDefense)
     assertTrue("Inventory must not be empty at start", player.inventory.isNotEmpty())
   }
+
+  @Test
+  fun testLocalization_bilingualStrings() {
+    val esNewGame = com.example.game.localization.Strings.getNewGame(com.example.game.localization.GameLanguage.SPANISH)
+    val enNewGame = com.example.game.localization.Strings.getNewGame(com.example.game.localization.GameLanguage.ENGLISH)
+    assertEquals("⚔ NUEVA PARTIDA", esNewGame)
+    assertEquals("⚔ NEW GAME", enNewGame)
+
+    val esForest = com.example.game.localization.Strings.getBiomeName(com.example.game.model.Biome.FOREST, com.example.game.localization.GameLanguage.SPANISH)
+    val enForest = com.example.game.localization.Strings.getBiomeName(com.example.game.model.Biome.FOREST, com.example.game.localization.GameLanguage.ENGLISH)
+    assertEquals("Bosque Esmeralda", esForest)
+    assertEquals("Emerald Forest", enForest)
+  }
 }
 

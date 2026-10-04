@@ -19,6 +19,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,7 @@ fun PauseMenuDialog(
     onExitToMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val lang by viewModel.currentLanguage.collectAsState()
     var soundEnabled by remember { mutableStateOf(viewModel.audio.isSoundEnabled) }
     var musicEnabled by remember { mutableStateOf(viewModel.audio.isMusicEnabled) }
 
@@ -56,51 +58,89 @@ fun PauseMenuDialog(
     ) {
         Column(
             modifier = Modifier
-                .padding(24.dp)
-                .fillMaxWidth(0.85f)
+                .padding(20.dp)
+                .fillMaxWidth(0.9f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFF0F172A))
                 .border(3.dp, Color(0xFFD97706), RoundedCornerShape(12.dp))
-                .padding(24.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "PAUSA",
+                text = com.example.game.localization.Strings.getPauseTitle(lang),
                 color = Color(0xFFFFD700),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Black
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Continuar
             MenuButton(
-                label = "Continuar Aventura",
+                label = com.example.game.localization.Strings.getResume(lang),
                 color = Color(0xFF059669),
                 onClick = onResume
             )
 
             // Inventario
             MenuButton(
-                label = "Mochila e Inventario",
+                label = com.example.game.localization.Strings.getInventory(lang),
                 color = Color(0xFF2563EB),
                 onClick = onOpenInventory
             )
 
             // Mapa
             MenuButton(
-                label = "Mapa Mundial",
+                label = com.example.game.localization.Strings.getWorldMap(lang),
                 color = Color(0xFF4F46E5),
                 onClick = onOpenMap
             )
 
             // Guardar Partida
             MenuButton(
-                label = "Guardar Partida",
+                label = com.example.game.localization.Strings.getSaveGame(lang),
                 color = Color(0xFFD97706),
                 onClick = { viewModel.saveCurrentGame() }
             )
+
+            // Language Selector inside Pause Menu
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = com.example.game.localization.Strings.getLanguageSetting(lang),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (lang == com.example.game.localization.GameLanguage.SPANISH) Color(0xFFD97706) else Color(0xFF334155))
+                            .clickable { viewModel.setLanguage(com.example.game.localization.GameLanguage.SPANISH) }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text("ES", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (lang == com.example.game.localization.GameLanguage.ENGLISH) Color(0xFFD97706) else Color(0xFF334155))
+                            .clickable { viewModel.setLanguage(com.example.game.localization.GameLanguage.ENGLISH) }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text("EN", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
 
             // Audio Switches
             Row(
@@ -110,7 +150,7 @@ fun PauseMenuDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Efectos SFX", color = Color.White, fontSize = 13.sp)
+                Text(com.example.game.localization.Strings.getSfxSetting(lang), color = Color.White, fontSize = 12.sp)
                 Switch(
                     checked = soundEnabled,
                     onCheckedChange = {
@@ -128,7 +168,7 @@ fun PauseMenuDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Música Chiptune", color = Color.White, fontSize = 13.sp)
+                Text(com.example.game.localization.Strings.getMusicSetting(lang), color = Color.White, fontSize = 12.sp)
                 Switch(
                     checked = musicEnabled,
                     onCheckedChange = {
@@ -141,7 +181,7 @@ fun PauseMenuDialog(
 
             // Salir al Menú
             MenuButton(
-                label = "Salir al Menú Principal",
+                label = com.example.game.localization.Strings.getExitToMenu(lang),
                 color = Color(0xFFDC2626),
                 onClick = onExitToMenu
             )

@@ -61,6 +61,7 @@ fun OverworldHUD(
     val biome by viewModel.currentBiome.collectAsState()
     val dialogue by viewModel.activeDialogue.collectAsState()
     val notifications by viewModel.notifications.collectAsState()
+    val lang by viewModel.currentLanguage.collectAsState()
 
     Box(modifier = modifier.fillMaxSize()) {
         // TOP BAR: Player Stats (Top Left) & Minimap + Controls (Top Right)
@@ -91,7 +92,7 @@ fun OverworldHUD(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "NV ${player.level}",
+                            text = "${com.example.game.localization.Strings.getLevelShort(lang)} ${player.level}",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
@@ -99,7 +100,7 @@ fun OverworldHUD(
                     }
 
                     Text(
-                        text = "Oro: ${player.gold} G",
+                        text = "${com.example.game.localization.Strings.getGold(lang)}: ${player.gold} G",
                         color = Color(0xFFFFD700),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
@@ -184,7 +185,7 @@ fun OverworldHUD(
                 // Current Biome Indicator
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = biome.displayName,
+                    text = com.example.game.localization.Strings.getBiomeName(biome, lang),
                     color = Color(biome.primaryColorHex),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
@@ -370,28 +371,53 @@ fun OverworldHUD(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
+                    val (speakerName, speakerTitle, speakerText) = if (lang == com.example.game.localization.GameLanguage.ENGLISH) {
+                        when (dlg.spriteKey) {
+                            "npc_wizard" -> Triple(
+                                "Elder Alden",
+                                "Guardian of the Order",
+                                listOf(
+                                    "Greetings, brave adventurer! The balance of Aethelgard is crumbling.",
+                                    "In the Forgotten Ruins to the east (Sector 10, 8) lies the Ancient Sun Orb.",
+                                    "Beware: the Abyssal Titan will awaken once unsealed. Forge mighty gear!"
+                                ).getOrElse(dlg.currentLineIndex) { dlg.lines[dlg.currentLineIndex] }
+                            )
+                            else -> Triple(
+                                "Scout Roland",
+                                "Wandering Explorer",
+                                listOf(
+                                    "The weather here is unpredictable. Gather herbs and ores to brew potions and equipment.",
+                                    "Use the B button to dash or cast arcane skills in battle.",
+                                    "I've heard the ancient Titan lurks beyond the mists once the artifact is claimed."
+                                ).getOrElse(dlg.currentLineIndex) { dlg.lines[dlg.currentLineIndex] }
+                            )
+                        }
+                    } else {
+                        Triple(dlg.speakerName, dlg.speakerTitle, dlg.lines[dlg.currentLineIndex])
+                    }
+
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = dlg.speakerName,
+                            text = speakerName,
                             color = Color(0xFFFFD700),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = dlg.speakerTitle,
+                            text = speakerTitle,
                             color = Color(0xFF94A3B8),
                             fontSize = 11.sp
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = dlg.lines[dlg.currentLineIndex],
+                            text = speakerText,
                             color = Color.White,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Presiona A para continuar ▶",
+                            text = com.example.game.localization.Strings.getPressAToContinue(lang),
                             color = Color(0xFFA7F3D0),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,

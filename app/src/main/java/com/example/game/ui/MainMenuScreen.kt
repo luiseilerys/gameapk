@@ -47,6 +47,7 @@ fun MainMenuScreen(
     modifier: Modifier = Modifier
 ) {
     val hasSaveGame by viewModel.hasSaveGame.collectAsState()
+    val lang by viewModel.currentLanguage.collectAsState()
     var showOptions by remember { mutableStateOf(false) }
     var soundEnabled by remember { mutableStateOf(viewModel.audio.isSoundEnabled) }
     var musicEnabled by remember { mutableStateOf(viewModel.audio.isMusicEnabled) }
@@ -96,7 +97,7 @@ fun MainMenuScreen(
                         .padding(horizontal = 20.dp, vertical = 10.dp)
                 ) {
                     Text(
-                        text = "A E T H E L G A R D",
+                        text = com.example.game.localization.Strings.getTitle(lang),
                         color = Color(0xFFFFD700),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Black,
@@ -108,14 +109,14 @@ fun MainMenuScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "— El Despertar del Titán —",
+                    text = com.example.game.localization.Strings.getSubtitle(lang),
                     color = Color(0xFFFDE68A),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "Aventura 2D de Exploración & Combate SNES",
+                    text = com.example.game.localization.Strings.getTitleDescription(lang),
                     color = Color(0xFF94A3B8),
                     fontSize = 11.sp
                 )
@@ -139,7 +140,7 @@ fun MainMenuScreen(
                             .height(52.dp)
                     ) {
                         Text(
-                            text = "⚔ NUEVA PARTIDA",
+                            text = com.example.game.localization.Strings.getNewGame(lang),
                             color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Black
@@ -160,7 +161,7 @@ fun MainMenuScreen(
                             .height(52.dp)
                     ) {
                         Text(
-                            text = if (hasSaveGame) "▶ CONTINUAR AVENTURA" else "(SIN PARTIDA GUARDADA)",
+                            text = if (hasSaveGame) com.example.game.localization.Strings.getContinue(lang) else com.example.game.localization.Strings.getNoSave(lang),
                             color = if (hasSaveGame) Color.White else Color(0xFF64748B),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
@@ -177,7 +178,7 @@ fun MainMenuScreen(
                             .height(48.dp)
                     ) {
                         Text(
-                            text = "⚙ OPCIONES DE AUDIO",
+                            text = com.example.game.localization.Strings.getAudioOptions(lang),
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -188,26 +189,74 @@ fun MainMenuScreen(
                 // Options Subpanel
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
+                        .fillMaxWidth(0.9f)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xEE0F172A))
                         .border(2.dp, Color(0xFFD97706), RoundedCornerShape(10.dp))
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "AJUSTES DE AUDIO SNES",
+                        text = com.example.game.localization.Strings.getAudioOptions(lang),
                         color = Color(0xFFFFD700),
-                        fontSize = 14.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
 
+                    // Language Selector Option
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = com.example.game.localization.Strings.getLanguageSetting(lang),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { viewModel.setLanguage(com.example.game.localization.GameLanguage.SPANISH) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (lang == com.example.game.localization.GameLanguage.SPANISH) Color(0xFFD97706) else Color(0xFF334155)
+                                ),
+                                shape = RoundedCornerShape(6.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "🇪🇸 Español",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (lang == com.example.game.localization.GameLanguage.SPANISH) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+
+                            Button(
+                                onClick = { viewModel.setLanguage(com.example.game.localization.GameLanguage.ENGLISH) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (lang == com.example.game.localization.GameLanguage.ENGLISH) Color(0xFFD97706) else Color(0xFF334155)
+                                ),
+                                shape = RoundedCornerShape(6.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "🇬🇧 English",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (lang == com.example.game.localization.GameLanguage.ENGLISH) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+
+                    // SFX Switch
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Sonidos SFX (8-Bit)", color = Color.White, fontSize = 12.sp)
+                        Text(com.example.game.localization.Strings.getSfxSetting(lang), color = Color.White, fontSize = 12.sp)
                         Switch(
                             checked = soundEnabled,
                             onCheckedChange = {
@@ -218,12 +267,13 @@ fun MainMenuScreen(
                         )
                     }
 
+                    // Music Switch
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Música Chiptune SNES", color = Color.White, fontSize = 12.sp)
+                        Text(com.example.game.localization.Strings.getMusicSetting(lang), color = Color.White, fontSize = 12.sp)
                         Switch(
                             checked = musicEnabled,
                             onCheckedChange = {
@@ -240,7 +290,7 @@ fun MainMenuScreen(
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Volver", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(com.example.game.localization.Strings.getBack(lang), color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }

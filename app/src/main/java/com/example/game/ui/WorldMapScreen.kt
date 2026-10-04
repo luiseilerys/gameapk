@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +48,7 @@ fun WorldMapScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val lang by viewModel.currentLanguage.collectAsState()
     var zoomLevel by remember { mutableFloatStateOf(1.0f) }
     val player = viewModel.player
     val artifactX = (viewModel.worldManager.generator.artifactChunkX * CHUNK_SIZE + 16).toFloat()
@@ -68,7 +70,7 @@ fun WorldMapScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "MAPA MUNDIAL DE AETHELGARD",
+                    text = com.example.game.localization.Strings.getWorldMapTitle(lang),
                     color = Color(0xFFFFD700),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black
@@ -94,7 +96,7 @@ fun WorldMapScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
                         shape = RoundedCornerShape(6.dp)
                     ) {
-                        Text("Cerrar ✕")
+                        Text(com.example.game.localization.Strings.getClose(lang))
                     }
                 }
             }
@@ -103,7 +105,7 @@ fun WorldMapScreen(
 
             // Objective Radar Notice
             Text(
-                text = "Distancia al Orbe del Sol en Ruinas (Sector 10, 8): $distToArtifact baldosas hacia el Este",
+                text = com.example.game.localization.Strings.getArtifactRadar(lang, distToArtifact),
                 color = Color(0xFFA7F3D0),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold

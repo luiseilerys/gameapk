@@ -71,6 +71,17 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _hasSaveGame = MutableStateFlow(saveManager.hasSavedGame())
     val hasSaveGame: StateFlow<Boolean> = _hasSaveGame.asStateFlow()
 
+    private val _currentLanguage = MutableStateFlow(saveManager.getSavedLanguage())
+    val currentLanguage: StateFlow<com.example.game.localization.GameLanguage> = _currentLanguage.asStateFlow()
+
+    fun setLanguage(lang: com.example.game.localization.GameLanguage) {
+        _currentLanguage.value = lang
+        saveManager.saveLanguage(lang)
+        audio.playSfx("select")
+        val msg = if (lang == com.example.game.localization.GameLanguage.SPANISH) "Idioma cambiado a Español" else "Language switched to English"
+        showNotification(msg)
+    }
+
     // Virtual Joystick Input Vector (-1f to 1f)
     var joystickX: Float = 0f
     var joystickY: Float = 0f
